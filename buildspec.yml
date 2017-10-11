@@ -1,21 +1,14 @@
-version: 0.2
-env:
-  variables:
-    TAG: "$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+version: 0.1
 phases:
   pre_build:
     commands:
       - $(aws ecr get-login)
-      - echo $CODEBUILD_SOURCE_VERSION
-      - echo $CODEBUILD_RESOLVED_SOURCE_VERSION
-      - echo "$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-      - echo "${TAG}"
   build:
     commands:
-      - docker build --tag "${TAG}" .
+      - docker build --tag "$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)" .
   post_build:
     commands:
-      - docker tag "${TAG}" "${REPOSITORY_URI}"
-      - docker tag "${TAG}" "${REPOSITORY_URI}:${TAG}"
+      - docker tag "$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)" "${REPOSITORY_URI}"
+      - docker tag "$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)" "${REPOSITORY_URI}:$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
       - docker push "${REPOSITORY_URI}"
-      - if ${SNS_TOPIC_ARN}; then aws sns publish --topic-arn ${SNS_TOPIC_ARN} --message "${APP} version ${TAG} is ready!"; fi
+      - if ${SNS_TOPIC_ARN}; then aws sns publish --topic-arn ${SNS_TOPIC_ARN} --message "${APP} version $(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8) is ready!"; fi
