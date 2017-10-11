@@ -293,7 +293,7 @@ Resources:
           - Name: AWS_DEFAULT_REGION
             Value: !Ref AWS::Region
           - Name: REPOSITORY_URI
-            Value: { "Fn::ImportValue" : {"Fn::Sub": "${ECRStack}-Service1Repository" } }
+            Value: { "Fn::ImportValue" : {"Fn::Sub": "${ECRStack}-Service1RepositoryUrl" } }
       Name:
         Fn::Join:
           - ''
