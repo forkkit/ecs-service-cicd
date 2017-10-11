@@ -1,4 +1,7 @@
-version: 0.1
+version: 0.2
+env:
+  variables:
+    TAG: "$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
 phases:
   pre_build:
     commands:
@@ -6,7 +9,6 @@ phases:
       - echo $CODEBUILD_SOURCE_VERSION
       - echo $CODEBUILD_RESOLVED_SOURCE_VERSION
       - echo "$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-      - export TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
       - echo "${TAG}"
   build:
     commands:
