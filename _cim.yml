@@ -23,7 +23,7 @@ stack:
 
     # Build Notification
     NotificationEmail: 'rgfindley@gmail.com'
-    NotificationSMS: '4103361660'
+    NotificationSMS: '1-410-336-1660'
 
 #
 # Define stack capabilities required.
