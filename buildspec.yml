@@ -1,0 +1,14 @@
+version: 0.1
+phases:
+  pre_build:
+    commands:
+      - $(aws ecr get-login)
+      - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+  build:
+    commands:
+      - docker build --tag "${TAG}" .
+  post_build:
+    commands:
+      - docker tag "${TAG}" "${REPOSITORY_URI}"
+      - docker tag "${TAG}" "${REPOSITORY_URI}:${TAG}"
+      - docker push "${REPOSITORY_URI}"
