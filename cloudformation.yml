@@ -38,6 +38,14 @@ Parameters:
     Type: String
     Description: GitHub repository branch
     Default: ''
+  NotificationEmail:
+    Type: String
+    Description: Build notification email endpoint
+    Default: ''
+  NotificationSMS:
+    Type: String
+    Description: Build notification sns endpoint
+    Default: ''
 
 Conditions:
   NeedsCICD: !And
@@ -45,6 +53,11 @@ Conditions:
     - !Not [!Equals [!Ref GitHubRepo, '']]
     - !Not [!Equals [!Ref GitHubToken, '']]
     - !Not [!Equals [!Ref GitHubBranch, '']]
+  NeedsBuildNotification: !Or
+    - !Not [!Equals [!Ref NotificationEmail, '']]
+    - !Not [!Equals [!Ref NotificationSMS, '']]
+  NeedsBuildNotificationEmail:  !Not [!Equals [!Ref NotificationEmail, '']]
+  NeedsBuildNotificationSMS:  !Not [!Equals [!Ref NotificationSMS, '']]
 
 Resources:
 
@@ -91,52 +104,6 @@ Resources:
                         "Resource": "*"
                 }]
             }
-
-
-#  TaskDefinition:
-#    Type: AWS::ECS::TaskDefinition
-#    Properties:
-#      Family: !Ref AWS::StackName
-#      ContainerDefinitions:
-#      - Name: !Ref AWS::StackName
-#        Cpu: '10'
-#        Essential: 'true'
-#        Image: httpd:2.4
-#        Memory: '300'
-#        LogConfiguration:
-#          LogDriver: awslogs
-#          Options:
-#            awslogs-group: !Ref AWS::StackName
-#            awslogs-region: !Ref AWS::Region
-#        MountPoints:
-#          - ContainerPath: /usr/local/apache2/htdocs
-#            SourceVolume: my-vol
-#        PortMappings:
-#          - ContainerPort: 80
-#      - Name: busybox
-#        Cpu: 10
-#        Command: [
-#            '/bin/sh -c "while true; do echo ''<html> <head> <title>Amazon ECS
-#            Sample App</title> <style>body {margin-top: 40px; background-color: #333;}
-#            </style> </head><body> <div style=color:white;text-align:center> <h1>Amazon
-#            ECS Sample App</h1> <h2>Congratulations!</h2> <p>Your application is now
-#            running on a container in Amazon ECS.</p>'' > top; /bin/date > date ;
-#            echo ''</div></body></html>'' > bottom; cat top date bottom > /usr/local/apache2/htdocs/index.html
-#            ; sleep 1; done"'
-#          ]
-#        EntryPoint: [sh, -c]
-#        Essential: false
-#        Image: busybox
-#        Memory: 200
-#        LogConfiguration:
-#          LogDriver: awslogs
-#          Options:
-#            awslogs-group: !Ref AWS::StackName
-#            awslogs-region: !Ref AWS::Region
-#        VolumesFrom:
-#        - SourceContainer: !Ref AWS::StackName
-#      Volumes:
-#      - Name: my-vol
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -273,6 +240,10 @@ Resources:
                   AccountId: { "Ref": "AWS::AccountId" },
                   Repository: { "Fn::ImportValue" : {"Fn::Sub": "${ECRStack}-Service1Repository" } }
                 }
+          - Effect: Allow
+            Action:
+              - sns:Publish
+            Resource: !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*'
       Roles:
         - !Ref CodeBuildRole
 
@@ -294,6 +265,10 @@ Resources:
             Value: !Ref AWS::Region
           - Name: REPOSITORY_URI
             Value: { "Fn::ImportValue" : {"Fn::Sub": "${ECRStack}-Service1RepositoryUrl" } }
+          - Name: APP
+            Value: !Ref AWS::StackName
+          - Name: SNS_TOPIC_ARN
+            Value: !If [NeedsBuildNotification, !Ref "BuildTopic", '']
       Name:
         Fn::Join:
           - ''
@@ -366,6 +341,31 @@ Resources:
               - Name: SourceOutput
             OutputArtifacts:
               - Name: BuildOutput
+
+  #
+  # Build Notification
+  #
+  BuildTopic:
+    Type: AWS::SNS::Topic
+    Condition: NeedsBuildNotification
+    Properties:
+      TopicName: !Sub "${AWS::StackName}-build-notifications"
+
+  EmailSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: NeedsBuildNotificationEmail
+    Properties:
+      Endpoint: !Ref NotificationEmail
+      Protocol: email
+      TopicArn: !Ref BuildTopic
+
+  SMSSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: NeedsBuildNotificationSMS
+    Properties:
+      Endpoint: !Ref NotificationSMS
+      Protocol: sms
+      TopicArn: !Ref BuildTopic
 
 Outputs:
   Service:
