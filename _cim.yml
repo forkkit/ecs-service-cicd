@@ -22,8 +22,8 @@ stack:
     GitHubBranch: 'master'
 
     # Build Notification
-    NotificationEmail: 'rgfindley@gmail.com'
-    NotificationSMS: '1-410-336-1660'
+#    NotificationEmail: 'xxxx@gmail.com'
+#    NotificationSMS: '1-410-336-xxxx'
 
 #
 # Define stack capabilities required.
