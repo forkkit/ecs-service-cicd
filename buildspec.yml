@@ -3,6 +3,8 @@ phases:
   pre_build:
     commands:
       - $(aws ecr get-login)
+      - echo $CODEBUILD_SOURCE_VERSION
+      - echo $CODEBUILD_RESOLVED_SOURCE_VERSION
       - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
   build:
     commands:
@@ -12,3 +14,4 @@ phases:
       - docker tag "${TAG}" "${REPOSITORY_URI}"
       - docker tag "${TAG}" "${REPOSITORY_URI}:${TAG}"
       - docker push "${REPOSITORY_URI}"
+      - if ${SNS_TOPIC_ARN}; then aws sns publish --topic-arn ${SNS_TOPIC_ARN} --message "${APP} version ${TAG} is ready!"; fi

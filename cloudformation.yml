@@ -149,7 +149,7 @@ Resources:
             - "${URL}:${Version}"
             - {
                 URL: { "Fn::ImportValue" : {"Fn::Sub": "${ECRStack}-Service1RepositoryUrl" } },
-                Version: !Ref Version
+                Version: { "Ref": "Version" }
               }
           Memory: 128
           PortMappings:
@@ -266,7 +266,13 @@ Resources:
               - ecr:InitiateLayerUpload
               - ecr:UploadLayerPart
               - ecr:CompleteLayerUpload
-            Resource: { "Fn::ImportValue" : {"Fn::Sub": "${ECRStack}-Service1RepositoryUrl" } }
+            Resource: !Sub
+              - "arn:aws:ecr:${Region}:${AccountId}:repository/${Repository}"
+              - {
+                  Region: { "Ref": "AWS::Region" },
+                  AccountId: { "Ref": "AWS::AccountId" },
+                  Repository: { "Fn::ImportValue" : {"Fn::Sub": "${ECRStack}-Service1Repository" } }
+                }
       Roles:
         - !Ref CodeBuildRole
 
@@ -287,7 +293,7 @@ Resources:
           - Name: AWS_DEFAULT_REGION
             Value: !Ref AWS::Region
           - Name: REPOSITORY_URI
-            Value: { "Fn::ImportValue" : {"Fn::Sub": "${ECRStack}-Service1RepositoryUrl" } }
+            Value: { "Fn::ImportValue" : {"Fn::Sub": "${ECRStack}-Service1Repository" } }
       Name:
         Fn::Join:
           - ''
